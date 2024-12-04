@@ -1,0 +1,18 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.form {
+  color: #333333;
+  background-color: #ffffff;
+  display: flex;
+  justify-content: center;
+  overflow-y: scroll;
+}
+
+.form-body {
+  width: 600px;
+  padding: 32px;
+}

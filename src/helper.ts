@@ -57,12 +57,17 @@ export function isSpecialField(field: Field) {
   return isUpdateAt || isCreatedAt;
 }
 
-export function toJSCode(schemas: Record<string, RJSFSchema>) {
+export function toCode(
+  schemas: Record<string, RJSFSchema>,
+  language: "typescript" | "javascript" = "javascript"
+) {
   let code = "";
   const models = Object.keys(schemas);
   const definitionsMap = {};
-  code += `import type { RJSFSchema } from '@rjsf/utils';`;
-  code += `\r\n`;
+  if (language === "typescript") {
+    code += `import type { RJSFSchema } from '@rjsf/utils';`;
+    code += `\r\n`;
+  }
   code += models
     .map((name) => {
       const originDefinitions = schemas[name].definitions ?? {};
@@ -77,7 +82,7 @@ export function toJSCode(schemas: Record<string, RJSFSchema>) {
       (model) =>
         `${model}: { ...${model}, definitions: { ${
           definitionsMap[model] ? definitionsMap[model] : ""
-        } } } as RJSFSchema`
+        } } } ${language === "typescript" ? "as RJSFSchema" : ""}`
     )
     .join(",")}};`;
   code += `\r\n`;

@@ -9,14 +9,7 @@ export default [
       file: path.resolve(__dirname, "dist/index.js"),
       format: "esm",
     },
-    plugins: [
-      typescript({
-        tsconfigOverride: {
-          compilerOptions: {},
-        },
-      }),
-      json(),
-    ],
+    plugins: [typescript(), json()],
     external: (id) => /node_modules/.test(id),
   },
   {

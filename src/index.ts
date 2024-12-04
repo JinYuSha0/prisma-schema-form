@@ -1,11 +1,14 @@
-import { type Enumerator, getSchema, Model } from "@mrleebo/prisma-ast";
+import { type Enumerator, type Model, getSchema } from "@mrleebo/prisma-ast";
 import type { RJSFSchema } from "@rjsf/utils";
 import type { Context } from "./type";
 import { processModel } from "./core";
-import { cloneContext, toJSCode } from "./helper";
+import { cloneContext, toCode } from "./helper";
 export { Config } from "./config";
 
-export async function transform(source: string) {
+export async function transform(
+  source: string,
+  language: "typescript" | "javascript" = "javascript"
+) {
   const prismaSchema = getSchema(source);
 
   const list = prismaSchema.list.sort((a, b) => (a.type === "enum" ? -1 : 0));
@@ -39,5 +42,5 @@ export async function transform(source: string) {
     } catch {}
   }
 
-  return toJSCode(schemas);
+  return toCode(schemas, language);
 }

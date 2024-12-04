@@ -18,8 +18,12 @@
       "types": "./generate/schema.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "yarn rollup -c --bundleConfigAsCjs"
   },
   "author": "JinYuSha0",
   "license": "ISC",
