@@ -8,6 +8,7 @@ import Form from "@rjsf/mui";
 import validator from "@rjsf/validator-ajv8";
 import ResizableLayout from "./components/ResizableLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
+import GithubSvg from "./assets/github-mark.svg";
 import { transform } from "../../../dist/index";
 import { useStorageState, StorageTypes } from "./hooks/use-storage.hook";
 import {
@@ -160,8 +161,8 @@ function App() {
       form={
         <div key={key} className="flex grow form">
           {formSchema ? (
-            <ErrorBoundary>
-              <div className="form-body">
+            <div className="form-body">
+              <ErrorBoundary>
                 <Stack gap={4}>
                   <FormControl variant="standard" fullWidth>
                     <InputLabel id="model-select-label">Model</InputLabel>
@@ -194,8 +195,15 @@ function App() {
                     }}
                   />
                 </Stack>
-              </div>
-            </ErrorBoundary>
+              </ErrorBoundary>
+
+              <a
+                href="https://github.com/JinYuSha0/prisma-schema-form"
+                target="_blank"
+              >
+                <img className="github" src={GithubSvg} />
+              </a>
+            </div>
           ) : (
             <></>
           )}

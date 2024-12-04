@@ -5,6 +5,7 @@ body {
 }
 
 .form {
+  position: relative;
   color: #333333;
   background-color: #ffffff;
   display: flex;
@@ -15,4 +16,12 @@ body {
 .form-body {
   width: 600px;
   padding: 32px;
+}
+
+.github {
+  width: 32px;
+  height: 32px;
+  position: fixed;
+  bottom: 16px;
+  right: 24px;
 }
