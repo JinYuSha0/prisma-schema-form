@@ -1,5 +1,5 @@
-import type { Model } from '@mrleebo/prisma-ast';
-import type { RJSFSchema } from '@rjsf/utils';
+import type { Model } from "@mrleebo/prisma-ast";
+import type { RJSFSchema } from "@rjsf/utils";
 
 export type Context = {
   enums: Record<string, string[]>;

@@ -13,6 +13,15 @@ export default [
     external: (id) => /node_modules/.test(id),
   },
   {
+    input: path.resolve(__dirname, "src/utils.ts"),
+    output: {
+      file: path.resolve(__dirname, "dist/utils.js"),
+      format: "esm",
+    },
+    plugins: [typescript(), json()],
+    external: (id) => /node_modules/.test(id),
+  },
+  {
     input: path.resolve(__dirname, "src/cli.ts"),
     output: {
       file: path.resolve(__dirname, "dist/cli.js"),

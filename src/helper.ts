@@ -6,6 +6,39 @@ import type {
 } from "@mrleebo/prisma-ast";
 import type { RJSFSchema } from "@rjsf/utils";
 import type { Context } from "./type";
+import type {
+  JSONSchema7TypeName,
+  JSONSchema7,
+  JSONSchema7Definition,
+} from "json-schema";
+
+type TransfromType<T extends { type: unknown }> = T["type"] extends undefined
+  ? undefined
+  : T["type"] extends string
+  ? JSONSchema7TypeName
+  : JSONSchema7TypeName[];
+
+export type JSONSchemaOutput = {
+  type: string;
+  required: string[];
+  properties: Record<string, unknown>;
+  definitions: Record<string, JSONSchema7Definition>;
+} & object;
+
+export type JSONSchema<T extends JSONSchemaOutput> = Omit<
+  T,
+  "type" | "properties"
+> & {
+  type: TransfromType<T>;
+  required: string[];
+  properties: T["properties"] extends undefined
+    ? undefined
+    : {
+        [K in keyof T["properties"]]: T["properties"][K] extends boolean
+          ? boolean
+          : JSONSchema7;
+      };
+};
 
 export function cloneContext(ctx: Partial<Context>, title: string): Context {
   const node: RJSFSchema = {
@@ -59,13 +92,13 @@ export function isSpecialField(field: Field) {
 
 export function toCode(
   schemas: Record<string, RJSFSchema>,
-  language: "typescript" | "javascript" = "javascript"
+  language: "typescript" | "javascript"
 ) {
   let code = "";
   const models = Object.keys(schemas);
   const definitionsMap = {};
   if (language === "typescript") {
-    code += `import type { RJSFSchema } from '@rjsf/utils';`;
+    code += `import type { JSONSchema } from 'prisma-schema-form';`;
     code += `\r\n`;
   }
   code += models
@@ -81,8 +114,10 @@ export function toCode(
     .map(
       (model) =>
         `${model}: { ...${model}, definitions: { ${
-          definitionsMap[model] ? definitionsMap[model] : ""
-        } } } ${language === "typescript" ? "as RJSFSchema" : ""}`
+          definitionsMap[model] ? definitionsMap[model].join(", ") : ""
+        } } } ${
+          language === "typescript" ? `as JSONSchema<typeof ${model}>` : ""
+        }`
     )
     .join(",")}};`;
   code += `\r\n`;

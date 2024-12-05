@@ -3,11 +3,13 @@ import type { RJSFSchema } from "@rjsf/utils";
 import type { Context } from "./type";
 import { processModel } from "./core";
 import { cloneContext, toCode } from "./helper";
-export { Config } from "./config";
+
+export type { Config } from "./config";
+export { schemaBuilder } from "./utils";
 
 export async function transform(
   source: string,
-  language: "typescript" | "javascript" = "javascript"
+  language: "javascript" | "typescript" = "javascript"
 ) {
   const prismaSchema = getSchema(source);
 
