@@ -6,7 +6,6 @@ import { cloneContext, toCode } from "./helper";
 
 export type { Config } from "./config";
 export type { JSONSchema, JSONSchemaOutput } from "./helper";
-export { schemaBuilder } from "./utils";
 
 export async function transform(
   source: string,

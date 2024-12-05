@@ -1,6 +1,6 @@
 {
   "name": "prisma-schema-form",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A tool to convert prisma schema to json schema-form",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,6 +16,10 @@
     "./schema": {
       "default": "./generate/schema.js",
       "types": "./generate/schema.d.ts"
+    },
+    "./utils": {
+      "default": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
     }
   },
   "files": [
