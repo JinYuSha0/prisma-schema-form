@@ -72,6 +72,7 @@ function processSimpleField(ctx: Context, field: Field) {
 
 function processComplexField(ctx: Context, field: Field) {
   if (ctx.node.properties && !ctx.foreignKeys.includes(field.name)) {
+    const isTS = ctx.language === "ts";
     if (field.array) {
       const simpleType = processFieldType(field);
       if (simpleType) {
@@ -88,6 +89,7 @@ function processComplexField(ctx: Context, field: Field) {
           type: "array",
           items: {
             $ref: `#/definitions/${field.fieldType}`,
+            ...(isTS ? { [`$def_${field.fieldType}`]: 0 } : {}),
           },
         };
       }
@@ -95,6 +97,7 @@ function processComplexField(ctx: Context, field: Field) {
       ctx.node.properties[field.name] = {
         title: field.name,
         $ref: `#/definitions/${field.fieldType}`,
+        ...(isTS ? { [`$def_${field.fieldType}`]: 0 } : {}),
       };
     }
   }
@@ -115,6 +118,7 @@ function processComplexdDefinitions(ctx: Context, field: Field) {
     if (field.array) {
       (ctx.node.properties ?? {})[field.name] = {
         type: "array",
+        title: field.name,
         uniqueItems: true,
         items: {
           type: "string",

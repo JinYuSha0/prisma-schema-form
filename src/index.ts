@@ -5,12 +5,9 @@ import { processModel } from "./core";
 import { cloneContext, toCode } from "./helper";
 
 export type { Config } from "./config";
-export type { JSONSchema, JSONSchemaOutput } from "./helper";
+export type { JSONSchemaModels, JSONSchemaOutput } from "./helper";
 
-export async function transform(
-  source: string,
-  language: "javascript" | "typescript" = "javascript"
-) {
+export async function transform(source: string, language: "js" | "ts" = "js") {
   const prismaSchema = getSchema(source);
 
   const list = prismaSchema.list.sort((a, b) => (a.type === "enum" ? -1 : 0));
@@ -21,6 +18,7 @@ export async function transform(
 
   const ctx: Partial<Context> = {
     enums,
+    language,
     prismaSchema: list
       .filter((item) => item.type === "model")
       .reduce((a: Record<string, Model>, b: Model) => {

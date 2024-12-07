@@ -8,4 +8,5 @@ export type Context = {
   rootNode?: RJSFSchema;
   node: RJSFSchema;
   foreignKeys: string[];
+  language: "js" | "ts";
 };

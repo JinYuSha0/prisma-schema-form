@@ -94,7 +94,7 @@ async function main() {
     options.output = path.join(process.cwd(), options.output);
   }
   const source = fs.readFileSync(options.input).toString();
-  const code = await transform(source, "typescript");
+  const code = await transform(source, "ts");
   const jsCode = codeToJs(code);
   const tsCode = codeToTs(code);
   ensureDirectoryExists(options.output);

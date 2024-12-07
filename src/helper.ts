@@ -6,13 +6,9 @@ import type {
 } from "@mrleebo/prisma-ast";
 import type { RJSFSchema } from "@rjsf/utils";
 import type { Context } from "./type";
-import type {
-  JSONSchema7TypeName,
-  JSONSchema7,
-  JSONSchema7Definition,
-} from "json-schema";
+import type { JSONSchema7TypeName } from "json-schema";
 
-type TransfromType<T extends { type: unknown }> = T["type"] extends undefined
+type TransfromType<T extends { type?: unknown }> = T["type"] extends undefined
   ? undefined
   : T["type"] extends string
   ? JSONSchema7TypeName
@@ -22,22 +18,43 @@ export type JSONSchemaOutput = {
   type: string;
   required: string[];
   properties: Record<string, unknown>;
-  definitions: Record<string, JSONSchema7Definition>;
+  definitions: Record<string, unknown>;
 } & object;
 
-export type JSONSchema<T extends JSONSchemaOutput> = Omit<
+type JSONSchema<T extends JSONSchemaOutput> = Omit<
   T,
-  "type" | "properties"
+  "type" | "properties" | "definitions"
 > & {
   type: TransfromType<T>;
   required: string[];
   properties: T["properties"] extends undefined
     ? undefined
     : {
-        [K in keyof T["properties"]]: T["properties"][K] extends boolean
-          ? boolean
-          : JSONSchema7;
+        [K in keyof T["properties"]]: T["properties"][K] extends {
+          type: unknown;
+          items?: { type?: unknown } & object;
+        }
+          ? Omit<T["properties"][K], "type" | "items"> & {
+              type: TransfromType<T["properties"][K]>;
+              items: T["properties"][K]["items"] extends object
+                ? Omit<T["properties"][K]["items"], "type"> & {
+                    type: TransfromType<T["properties"][K]["items"]>;
+                  }
+                : undefined;
+            }
+          : boolean;
       };
+  definitions: T["definitions"] extends object
+    ? {
+        [K in keyof T["definitions"]]: T["definitions"][K] extends JSONSchemaOutput
+          ? JSONSchema<T["definitions"][K]>
+          : boolean;
+      }
+    : undefined;
+};
+
+export type JSONSchemaModels<T extends Record<string, JSONSchemaOutput>> = {
+  [K in keyof T]: JSONSchema<T[K]>;
 };
 
 export function cloneContext(ctx: Partial<Context>, title: string): Context {
@@ -92,13 +109,13 @@ export function isSpecialField(field: Field) {
 
 export function toCode(
   schemas: Record<string, RJSFSchema>,
-  language: "typescript" | "javascript"
+  language: "js" | "ts"
 ) {
   let code = "";
   const models = Object.keys(schemas);
   const definitionsMap = {};
-  if (language === "typescript") {
-    code += `import type { JSONSchema } from 'prisma-schema-form';`;
+  if (language === "ts") {
+    code += `import type { JSONSchemaModels } from 'prisma-schema-form';`;
     code += `\r\n`;
   }
   code += models
@@ -115,12 +132,12 @@ export function toCode(
       (model) =>
         `${model}: { ...${model}, definitions: { ${
           definitionsMap[model] ? definitionsMap[model].join(", ") : ""
-        } } } ${
-          language === "typescript" ? `as JSONSchema<typeof ${model}>` : ""
-        }`
+        } } }`
     )
     .join(",")}};`;
   code += `\r\n`;
-  code += `export default models;`;
+  code += `export default models ${
+    language === "ts" ? "as JSONSchemaModels<typeof models>" : ""
+  };`;
   return code;
 }
