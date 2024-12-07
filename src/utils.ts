@@ -76,6 +76,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
         }
       }
       delete root["properties"][property];
+      root["required"] = without(root["required"], property);
     }
     return this as any;
   }
