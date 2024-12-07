@@ -13,21 +13,21 @@ type ExtractName<T> = T extends `$def_${infer Name}` ? Name : never;
 type Paths<T, P extends readonly any[] = []> = T extends JSONSchemaOutput
   ? {
       [K in keyof T["properties"]]: T["properties"][K] extends JSONSchema7
-        ? T["properties"][K]["items"] extends object
-          ? T["definitions"][ExtractName<
-              ExtractDefinitionName<T["properties"][K]>
-            >] extends JSONSchema7
-            ? Paths<
+        ? T["properties"][K]["items"] extends undefined
+          ? [...P, K]
+          : T["properties"][K]["items"] extends { $ref: string }
+          ? Partial<
+              Paths<
                 T["definitions"][ExtractName<
                   ExtractDefinitionName<T["properties"][K]>
                 >],
                 [...P, K]
               >
-            : [...P, K]
-          : Partial<[...P, K]>
-        : string[];
+            >
+          : [...P, K]
+        : [...P, K];
     }[keyof T["properties"]]
-  : string[];
+  : [...P];
 
 class SchemaBuilder<T extends JSONSchemaOutput> {
   private model: T;
