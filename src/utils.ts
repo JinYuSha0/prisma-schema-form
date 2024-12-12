@@ -101,7 +101,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     this.model.properties[key as string] = {
-      ...(this.model.properties[key as string] ?? {}),
+      ...((this.model.properties[key as string] ?? {}) as JSONSchema7),
       ...value,
     };
     return this as any;
@@ -127,7 +127,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
       }
     }
     root.properties[property] = {
-      ...(root.properties[property] ?? {}),
+      ...((root.properties[property] ?? {}) as JSONSchema7),
       ...(value ?? {}),
     };
     return this as any;
