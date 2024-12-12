@@ -29,6 +29,22 @@ type Paths<T, P extends readonly any[] = []> = T extends JSONSchemaOutput
     }[keyof T["properties"]]
   : [...P];
 
+type Keys<T> = T extends JSONSchemaOutput
+  ? {
+      [K in keyof T["properties"]]: T["properties"][K] extends JSONSchema7
+        ? T["properties"][K]["items"] extends undefined
+          ? K
+          : T["properties"][K]["items"] extends { $ref: string }
+          ? Keys<
+              T["definitions"][ExtractName<
+                ExtractDefinitionName<T["properties"][K]>
+              >]
+            >
+          : K
+        : K;
+    }[keyof T["properties"]]
+  : never;
+
 class SchemaBuilder<T extends JSONSchemaOutput> {
   private model: T;
 
@@ -36,7 +52,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     this.model = cloneDeep(model);
   }
 
-  omit<K extends keyof T["properties"], C extends boolean>(
+  omit<C extends boolean, K extends keyof T["properties"]>(
     condition: C,
     ...keys: K[]
   ): C extends true
@@ -46,14 +62,12 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
         }
       >
     : SchemaBuilder<T> {
-    if (condition === true) {
-      this.model = {
-        ...this.model,
-        properties: omit(this.model.properties ?? {}, keys as string[]),
-        required: without(this.model.required, ...(keys as string[])),
-      };
-      return this as any;
-    }
+    if (!condition) return this as any;
+    this.model = {
+      ...this.model,
+      properties: omit(this.model.properties ?? {}, keys as string[]),
+      required: without(this.model.required, ...(keys as string[])),
+    };
     return this as any;
   }
 
@@ -62,33 +76,82 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     paths: P
   ): SchemaBuilder<T> {
     const _paths = paths as string[];
-    if (condition && _paths?.length > 0) {
-      let root = this.model;
-      const prevPaths = _paths.slice(0, -1);
-      const property = _paths.slice(-1)[0];
-      for (const path of prevPaths) {
-        if (root["properties"][path]) {
-          const $ref = root["properties"][path]["items"]["$ref"];
-          const def = $ref.replace("#/definitions/", "");
-          if (root["definitions"][def]) {
-            root = root["definitions"][def] as any;
-          }
+    if (!condition || !_paths?.length) return this as any;
+    let root = this.model;
+    const prevPaths = _paths.slice(0, -1);
+    const property = _paths.slice(-1)[0];
+    for (const path of prevPaths) {
+      if (root.properties[path]) {
+        const $ref = root.properties[path]["items"]["$ref"];
+        const def = $ref.replace("#/definitions/", "");
+        if (root.definitions[def]) {
+          root = root.definitions[def] as any;
         }
       }
-      delete root["properties"][property];
-      root["required"] = without(root["required"], property);
+    }
+    delete root.properties[property];
+    root.required = without(root.required, property);
+    return this as any;
+  }
+
+  assign<C extends boolean, K extends keyof T["properties"]>(
+    condition: C,
+    key: K,
+    value: Partial<JSONSchema7>
+  ): SchemaBuilder<T> {
+    if (!condition) return this as any;
+    this.model.properties[key as string] = {
+      ...(this.model.properties[key as string] ?? {}),
+      ...value,
+    };
+    return this as any;
+  }
+
+  assignDeep<C extends boolean, P extends Paths<T>>(
+    condition: C,
+    paths: P,
+    value: Partial<JSONSchema7>
+  ): SchemaBuilder<T> {
+    if (!condition) return this as any;
+    const _paths = paths as string[];
+    let root = this.model;
+    const prevPaths = _paths.slice(0, -1);
+    const property = _paths.slice(-1)[0];
+    for (const path of prevPaths) {
+      if (root.properties[path]) {
+        const $ref = root.properties[path]["items"]["$ref"];
+        const def = $ref.replace("#/definitions/", "");
+        if (root.definitions[def]) {
+          root = root.definitions[def] as any;
+        }
+      }
+    }
+    root.properties[property] = {
+      ...(root.properties[property] ?? {}),
+      ...(value ?? {}),
+    };
+    return this as any;
+  }
+
+  required<C extends boolean, K extends Keys<T>>(condition: C, ...keys: K[]) {
+    if (condition) {
+      this.model.required = [...new Set([...this.model.required, ...keys])];
     }
     return this as any;
   }
 
-  appendBefore<R extends Record<string, JSONSchema7>>(
+  appendBefore<C extends boolean, R extends Record<string, JSONSchema7>>(
+    condition: C,
     key: keyof T["properties"],
     fields: R
-  ): SchemaBuilder<
-    T & {
-      properties: { [K in keyof R]: JSONSchema7 };
-    }
-  > {
+  ): C extends true
+    ? SchemaBuilder<
+        T & {
+          properties: { [K in keyof R]: JSONSchema7 };
+        }
+      >
+    : SchemaBuilder<T> {
+    if (!condition) return this as any;
     const entries = Object.entries(this.model.properties);
     const targetIndex = entries.findIndex(([currKey]) => currKey === key);
     const appendEntries = Object.entries(fields);
@@ -111,14 +174,18 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     return this as any;
   }
 
-  appendAfter<R extends Record<string, JSONSchema7>>(
+  appendAfter<C extends boolean, R extends Record<string, JSONSchema7>>(
+    condition: C,
     key: keyof T["properties"],
     fields: R
-  ): SchemaBuilder<
-    T & {
-      properties: { [K in keyof R]: JSONSchema7 };
-    }
-  > {
+  ): C extends true
+    ? SchemaBuilder<
+        T & {
+          properties: { [K in keyof R]: JSONSchema7 };
+        }
+      >
+    : SchemaBuilder<T> {
+    if (!condition) return this as any;
     const entries = Object.entries(this.model.properties);
     const targetIndex = entries.findIndex(([currKey]) => currKey === key) + 1;
     const appendEntries = Object.entries(fields);
