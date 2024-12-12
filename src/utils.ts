@@ -1,6 +1,6 @@
 import type { JSONSchemaOutput } from "./helper";
 import type { JSONSchema7 } from "json-schema";
-import { cloneDeep, omit, without } from "es-toolkit";
+import { cloneDeep, omit, without, merge } from "es-toolkit";
 
 type ExtractDefinitionName<T> = T extends JSONSchema7
   ? {
@@ -94,48 +94,37 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     return this as any;
   }
 
-  assign<C extends boolean, K extends keyof T["properties"]>(
+  assign<C extends boolean>(
     condition: C,
-    key: K,
-    value: Partial<JSONSchema7>
+    value: Partial<JSONSchema7> | ((model: T) => Partial<JSONSchema7>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
-    this.model.properties[key as string] = {
-      ...((this.model.properties[key as string] ?? {}) as JSONSchema7),
-      ...value,
-    };
+    this.model = merge(
+      this.model,
+      typeof value === "function" ? value(this.model) : value
+    );
     return this as any;
   }
 
   assignDeep<C extends boolean, P extends Paths<T>>(
     condition: C,
-    paths: P,
-    value: Partial<JSONSchema7>
+    key: keyof T["properties"],
+    value: Partial<JSONSchema7> | ((model: JSONSchema7) => Partial<JSONSchema7>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
-    const _paths = paths as string[];
     let root = this.model;
-    const prevPaths = _paths.slice(0, -1);
-    const property = _paths.slice(-1)[0];
-    for (const path of prevPaths) {
-      if (root.properties[path]) {
-        const $ref = root.properties[path]["items"]["$ref"];
-        const def = $ref.replace("#/definitions/", "");
-        if (root.definitions[def]) {
-          root = root.definitions[def] as any;
-        }
-      }
+    let def: string | undefined;
+    if (root.properties[key as string]) {
+      const $ref = root.properties[key as string]!["items"]["$ref"];
+      def = $ref.replace("#/definitions/", "");
     }
-    root.properties[property] = {
-      ...((root.properties[property] ?? {}) as JSONSchema7),
-      ...(value ?? {}),
-    };
-    return this as any;
-  }
-
-  required<C extends boolean, K extends Keys<T>>(condition: C, ...keys: K[]) {
-    if (condition) {
-      this.model.required = [...new Set([...this.model.required, ...keys])];
+    if (def) {
+      this.model.definitions[def] = merge(
+        this.model.definitions[def] as JSONSchema7,
+        typeof value === "function"
+          ? value(this.model.definitions[def as string] as JSONSchema7)
+          : value
+      );
     }
     return this as any;
   }
