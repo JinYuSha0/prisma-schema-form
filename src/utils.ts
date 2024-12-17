@@ -96,12 +96,12 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
 
   assign<C extends boolean>(
     condition: C,
-    value: Partial<JSONSchema7> | ((model: T) => T)
+    value: Partial<JSONSchema7> | ((model: T) => Partial<JSONSchema7>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     this.model =
       typeof value === "function"
-        ? value(this.model)
+        ? (value(this.model) as T)
         : merge(this.model, value);
     return this as any;
   }
@@ -109,7 +109,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
   assignDeep<C extends boolean>(
     condition: C,
     key: keyof T["properties"],
-    value: Partial<JSONSchema7> | ((model: JSONSchema7) => T)
+    value: Partial<JSONSchema7> | ((model: JSONSchema7) => Partial<JSONSchema7>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     let root = this.model;
