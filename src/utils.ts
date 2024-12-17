@@ -96,20 +96,20 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
 
   assign<C extends boolean>(
     condition: C,
-    value: Partial<JSONSchema7> | ((model: T) => Partial<JSONSchema7>)
+    value: Partial<JSONSchema7> | ((model: T) => T)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
-    this.model = merge(
-      this.model,
-      typeof value === "function" ? value(this.model) : value
-    );
+    this.model =
+      typeof value === "function"
+        ? value(this.model)
+        : merge(this.model, value);
     return this as any;
   }
 
-  assignDeep<C extends boolean, P extends Paths<T>>(
+  assignDeep<C extends boolean>(
     condition: C,
     key: keyof T["properties"],
-    value: Partial<JSONSchema7> | ((model: JSONSchema7) => Partial<JSONSchema7>)
+    value: Partial<JSONSchema7> | ((model: JSONSchema7) => T)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     let root = this.model;
@@ -119,12 +119,10 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
       def = $ref.replace("#/definitions/", "");
     }
     if (def) {
-      this.model.definitions[def] = merge(
-        this.model.definitions[def] as JSONSchema7,
+      this.model.definitions[def] =
         typeof value === "function"
           ? value(this.model.definitions[def as string] as JSONSchema7)
-          : value
-      );
+          : merge(this.model.definitions[def] as JSONSchema7, value);
     }
     return this as any;
   }
