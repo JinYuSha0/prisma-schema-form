@@ -132,6 +132,7 @@ function processComplexdDefinitions(ctx: Context, field: Field) {
         title: field.name,
         uniqueItems: true,
         enum: ctx.enums[field.fieldType],
+        default: "",
         ...(attribute ? attribute : {}),
       };
     }
