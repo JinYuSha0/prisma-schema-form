@@ -3,3 +3,4 @@ dist/
 prisma/
 generate/
 yarn.lock
+.yarn/

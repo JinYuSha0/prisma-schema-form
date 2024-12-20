@@ -29,21 +29,13 @@ type Paths<T, P extends readonly any[] = []> = T extends JSONSchemaOutput
     }[keyof T["properties"]]
   : [...P];
 
-type Keys<T> = T extends JSONSchemaOutput
-  ? {
-      [K in keyof T["properties"]]: T["properties"][K] extends JSONSchema7
-        ? T["properties"][K]["items"] extends undefined
-          ? K
-          : T["properties"][K]["items"] extends { $ref: string }
-          ? Keys<
-              T["definitions"][ExtractName<
-                ExtractDefinitionName<T["properties"][K]>
-              >]
-            >
-          : K
-        : K;
-    }[keyof T["properties"]]
-  : never;
+type JSONSchemaValue = Omit<JSONSchema7, "properties"> & {
+  properties?:
+    | {
+        [key: string]: JSONSchema7 & { errorMessage?: Record<string, string> };
+      }
+    | undefined;
+};
 
 class SchemaBuilder<T extends JSONSchemaOutput> {
   private model: T;
@@ -96,7 +88,7 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
 
   assign<C extends boolean>(
     condition: C,
-    value: Partial<JSONSchema7> | ((model: T) => Partial<JSONSchema7>)
+    value: Partial<JSONSchemaValue> | ((model: T) => Partial<JSONSchemaValue>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     this.model =
@@ -109,7 +101,9 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
   assignDeep<C extends boolean>(
     condition: C,
     key: keyof T["properties"],
-    value: Partial<JSONSchema7> | ((model: JSONSchema7) => Partial<JSONSchema7>)
+    value:
+      | Partial<JSONSchemaValue>
+      | ((model: JSONSchemaValue) => Partial<JSONSchemaValue>)
   ): SchemaBuilder<T> {
     if (!condition) return this as any;
     let root = this.model;
@@ -121,20 +115,20 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     if (def) {
       this.model.definitions[def] =
         typeof value === "function"
-          ? value(this.model.definitions[def as string] as JSONSchema7)
-          : merge(this.model.definitions[def] as JSONSchema7, value);
+          ? value(this.model.definitions[def as string] as JSONSchemaValue)
+          : merge(this.model.definitions[def] as JSONSchemaValue, value);
     }
     return this as any;
   }
 
-  appendBefore<C extends boolean, R extends Record<string, JSONSchema7>>(
+  appendBefore<C extends boolean, R extends Record<string, JSONSchemaValue>>(
     condition: C,
     key: keyof T["properties"],
     fields: R
   ): C extends true
     ? SchemaBuilder<
         T & {
-          properties: { [K in keyof R]: JSONSchema7 };
+          properties: { [K in keyof R]: JSONSchemaValue };
         }
       >
     : SchemaBuilder<T> {
@@ -161,14 +155,14 @@ class SchemaBuilder<T extends JSONSchemaOutput> {
     return this as any;
   }
 
-  appendAfter<C extends boolean, R extends Record<string, JSONSchema7>>(
+  appendAfter<C extends boolean, R extends Record<string, JSONSchemaValue>>(
     condition: C,
     key: keyof T["properties"],
     fields: R
   ): C extends true
     ? SchemaBuilder<
         T & {
-          properties: { [K in keyof R]: JSONSchema7 };
+          properties: { [K in keyof R]: JSONSchemaValue };
         }
       >
     : SchemaBuilder<T> {
